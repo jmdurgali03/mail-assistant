@@ -6,7 +6,7 @@
         "hooks": {"allowConversationAccess": false},
         "config": {
           "enabled": false,
-          "assistantRoot": "/home/REPLACE_USER/bichi-workspace/mail-assistant",
+          "assistantRoot": "/home/REPLACE_USER/projects/mail-assistant/src",
           "assistantConfig": "/home/REPLACE_USER/.config/bichi-mail/config.json",
           "database": "/home/REPLACE_USER/.local/state/bichi-mail/mail.sqlite3",
           "python": "/usr/bin/python3"

@@ -335,7 +335,7 @@ print(json.dumps(result))
             baseline = datetime.now(timezone.utc) - timedelta(minutes=2)
             app.ingest(snapshot([], baseline), baseline)
             app.close()
-            cmd = [sys.executable, str(Path(__file__).with_name('pipeline.py')),
+            cmd = [sys.executable, str(Path(__file__).resolve().parents[1] / 'src/pipeline.py'),
                    '--config', str(cfg), '--db', str(db), 'job']
             env = {**os.environ, 'PATH': str(fake) + os.pathsep + os.environ.get('PATH', '')}
             for index in range(2):
@@ -454,7 +454,7 @@ class AdapterTests(unittest.TestCase):
     def test_owned_oauth_uses_dedicated_state_and_pins_validated_config(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "model.json"
-            pinned = json.loads(Path(__file__).with_name("analysis-config.owner.example.json").read_text())
+            pinned = json.loads((Path(__file__).resolve().parents[1] / "examples/analysis-config.owner.example.json").read_text())
             pinned["agents"]["entries"]["bichi-mail-analyzer"]["workspace"] = str(
                 Path.home() / ".openclaw-bichi-mail-analysis" / "workspace")
             path.write_text(json.dumps(pinned))
@@ -475,7 +475,7 @@ class AdapterTests(unittest.TestCase):
         import copy
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "model.json"
-            pinned = json.loads(Path(__file__).with_name("analysis-config.owner.example.json").read_text())
+            pinned = json.loads((Path(__file__).resolve().parents[1] / "examples/analysis-config.owner.example.json").read_text())
             pinned["agents"]["entries"]["bichi-mail-analyzer"]["workspace"] = str(
                 Path.home() / ".openclaw-bichi-mail-analysis" / "workspace")
             config = {"analysis_enabled": True, "analysis_config": str(path),

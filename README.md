@@ -1,145 +1,160 @@
 # 🤖 Mail Assistant
 
-[![Status](https://img.shields.io/badge/status-experimental-orange.svg)](#estado-y-alcance)
+**English** | [Español](README.es.md)
+
+[![Status](https://img.shields.io/badge/status-experimental-orange.svg)](#status-and-scope)
 [![License](https://img.shields.io/github/license/jmdurgali03/mail-assistant)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](VERSION)
 [![Tests](https://github.com/jmdurgali03/mail-assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/jmdurgali03/mail-assistant/actions/workflows/tests.yml)
 [![GitHub Issues](https://img.shields.io/github/issues/jmdurgali03/mail-assistant)](https://github.com/jmdurgali03/mail-assistant/issues)
-[![GitHub Last Commit](https://img.shields.io/github/last-commit/jmdurgali03/mail-assistant)](https://github.com/jmdurgali03/mail-assistant/commits/main/)
+[![Last Commit](https://img.shields.io/github/last-commit/jmdurgali03/mail-assistant)](https://github.com/jmdurgali03/mail-assistant/commits/main/)
 
-## Descripción General del Proyecto
+## Project Overview
 
-Asistente de correo con núcleo local en Python y SQLite, adaptadores de lectura de Gmail y notificaciones privadas por Telegram mediante OpenClaw. Prepara evidencia del correo, clasifica su prioridad y redacta un resumen breve, manteniendo separados el análisis, las propuestas de acciones y su ejecución.
+A local-first email assistant built with Python and SQLite, with read-only Gmail adapters and private Telegram notifications through OpenClaw. It gathers email evidence, classifies priority and drafts concise summaries, keeping analysis, proposed actions and execution separate.
 
-El núcleo y la demo pueden ejecutarse **sin cuentas, credenciales ni servicios externos**. Las integraciones reales son avanzadas y requieren configuración propia.
+The core and demo run **without accounts, credentials or external services**. Live integrations require operator-specific configuration.
 
-## 🚀 Características Principales
+## 🚀 Key Features
 
-- **Planificación local**: seguimiento de pendientes, prioridades, propuestas de etiquetas y digest.
-- **Análisis por etapas**: preparación GPT → decisión Jev → redacción GPT, con evidencia y validación de contratos.
-- **Gmail en modo lectura**: comprobación de cuenta y permisos; sin envío, archivado ni modificación automática de Gmail.
-- **Notificaciones privadas**: bandeja de salida SQLite, deduplicación y bloqueo ante entregas inciertas, sin reenvío automático.
-- **Protección de contenido sensible**: tratamiento conservador de códigos de acceso y autenticación; no constituye un detector infalible.
-- **Acciones locales**: botones de revisado y posposición; las correcciones no modifican Gmail. Incluye agrupación específica de avisos de IOL.
-- **Pruebas sintéticas**: contratos, aislamiento de identidad, recuperación y procesos con ejecutables falsos.
+- **Local planning:** track pending items, priorities, proposed labels and digests.
+- **Staged analysis:** GPT preparation → Jev decision → GPT rendering, with evidence and contract validation.
+- **Read-only Gmail:** account and permission checks; no automatic sending, archiving or Gmail modifications.
+- **Private notifications:** SQLite outbox, deduplication and fail-closed handling of uncertain delivery, without automatic retries.
+- **Sensitive-content protection:** conservative handling of authentication and access codes; detection is not infallible.
+- **Local actions:** reviewed and snooze buttons, local corrections and specialized grouping for IOL financial notifications.
+- **Synthetic checks:** contracts, identity isolation, recovery and subprocess tests using fake executables.
 
-## 🛠️ Tecnologías Utilizadas
+## 🛠️ Technology Stack
 
-| Componente | Tecnología |
+| Component | Technology |
 |---|---|
-| Núcleo | Python 3.12+, biblioteca estándar |
-| Persistencia | SQLite (`sqlite3`) |
-| Puentes y plugins | JavaScript ESM, Node.js 24.16+ |
-| Integraciones opcionales | OpenClaw, gogcli, Google OAuth, Telegram, TypeSafe/Jev |
-| Programación opcional | systemd de usuario en Linux |
+| Core | Python 3.12+, standard library |
+| Storage | SQLite (`sqlite3`) |
+| Bridges and plugins | JavaScript ESM, Node.js 24.16+ |
+| Optional integrations | OpenClaw, gogcli, Google OAuth, Telegram, TypeSafe/Jev |
+| Optional scheduling | Linux user systemd |
 
-No hay dependencias pip ni npm de terceros para la demo o las pruebas. Los módulos `fcntl` y `resource` requieren un entorno Unix; **Linux es la plataforma de referencia**. La integración real puede implicar costos de proveedores y no se activa al instalar el proyecto.
+No third-party pip or npm packages are needed for the demo or tests. Unix-only modules (`fcntl`, `resource`) make **Linux the reference platform**. Live integrations may incur provider charges and are not enabled by installation.
 
-## 🏗️ Arquitectura del Proyecto
+## 🏗️ Architecture and Repository Layout
 
 ```mermaid
 flowchart LR
-    Gmail[Gmail readonly / gogcli] --> Read[Lectura y filtrado]
-    Read --> Prep[Preparación GPT]
-    Prep --> Jev[Decisión Jev]
-    Jev --> Render[Redacción GPT]
+    Gmail[Gmail readonly / gogcli] --> Read[Read and filter]
+    Read --> Prep[GPT preparation]
+    Prep --> Jev[Jev decision]
+    Jev --> Render[GPT rendering]
     Render --> DB[(SQLite / outbox)]
-    DB --> Telegram[Telegram mediante OpenClaw]
-    Telegram --> Actions[Correcciones y acciones locales]
+    DB --> Telegram[Telegram through OpenClaw]
+    Telegram --> Actions[Local corrections and actions]
     Actions --> DB
 ```
 
-- `assistant.py`: estado local, ingestión y propuestas; no realiza operaciones externas.
-- `pipeline.py`: adaptadores y outbox transaccional.
-- `mail_stages.py`, `jev_decisions.py`, `jev_gateway.mjs`: preparación, clasificación y redacción.
-- `mail_watch.py`: captura de nuevos correos desde una frontera de activación explícita.
-- `gmail_consent.py`, `gmail_unlock.py`, `mail_reconnect.py`: consentimiento y recuperación de credenciales.
-- `telegram-plugin/`, `actions-plugin/`: integración con el runtime existente; no crean otro consumidor de Telegram.
-- `test_*.py` y `*/test_plugin.mjs`: pruebas sintéticas.
+```text
+src/                  Python application modules and Jev gateway
+tests/               Synthetic Python tests and fixtures
+plugins/
+  actions-plugin/     Telegram notification actions
+  telegram-plugin/    Local analysis corrections
+examples/             Sanitized JSON configuration templates
+scripts/check.sh      Reproducible synthetic checks
+systemd/              Optional user service and timer templates
+docs/                 Integration and migration guides
+```
 
-## ⚙️ Instalación
+All Python modules remain together in `src/` to preserve their sibling imports and subprocess entry points. Tests are separate from production code.
 
-### 1. Clonar el repositorio
+- `src/assistant.py`: local state, ingestion and proposals; no external operations.
+- `src/pipeline.py`: adapters and transactional outbox.
+- `src/mail_stages.py`, `src/jev_decisions.py`, `src/jev_gateway.mjs`: preparation, classification and rendering.
+- `src/mail_watch.py`: new-email capture from an explicit activation boundary.
+- `src/gmail_consent.py`, `src/gmail_unlock.py`, `src/mail_reconnect.py`: consent and credential recovery.
+- Plugins use the existing runtime; they do not create another Telegram consumer.
+
+## ⚙️ Installation
+
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/jmdurgali03/mail-assistant.git
 cd mail-assistant
 ```
 
-### 2. Comprobar requisitos
+### 2. Check requirements
 
 ```bash
 python3 --version
 node --version
 ```
 
-No hace falta ejecutar `npm install` ni `pip install` para probar el núcleo. La base de zonas horarias del sistema debe incluir `America/Argentina/Salta`, actualmente utilizada en los horarios del asistente.
+There is no `npm install` or `pip install` step for the core. The system timezone database must include `America/Argentina/Salta`, currently used for assistant scheduling.
 
-### 3. Configuración y Variables de Entorno (.env)
+### 3. Configuration and Environment Variables (.env)
 
-**El proyecto no carga archivos `.env` automáticamente.** La configuración de la aplicación es JSON; las variables se exportan al proceso o las suministra systemd. No hace falta ninguna para la demo.
-
-Para explorar la configuración del núcleo:
+**The application does not automatically load `.env` files.** Application configuration uses JSON. Export environment variables to the process or supply them through systemd. The demo needs none.
 
 ```bash
-cp config.example.json config.local.json
+cp examples/config.example.json config.local.json
 chmod 600 config.local.json
 ```
 
-Reemplazá los placeholders únicamente en tu copia privada. Los flags de lectura, análisis, entrega y programación están desactivados por defecto. El archivo de ejemplo del núcleo **no es una configuración lista para el worker continuo**.
+Replace placeholders only in your private copy. Reading, analysis, delivery and scheduling flags are disabled by default. The core example is **not a ready-to-run continuous-worker configuration**.
 
-| Variable | Uso |
+| Variable | Purpose |
 |---|---|
-| `HOME` | Ubicación de perfiles y estado privado del operador |
-| `CREDENTIALS_DIRECTORY` | Directorio entregado por systemd con `gmail-keyring-password` |
-| `PORT`, `PUBLIC_URL` | Puerto y origen del portal OAuth cuando se ejecuta explícitamente |
-| `GOG_KEYRING_PASSWORD` | Solo el adaptador la transmite al subproceso gog; no guardarla en `.env` ni en Git |
+| `HOME` | Operator profiles and private state |
+| `CREDENTIALS_DIRECTORY` | systemd credential directory containing `gmail-keyring-password` |
+| `PORT`, `PUBLIC_URL` | OAuth portal port and origin when explicitly launched |
+| `GOG_KEYRING_PASSWORD` | Passed to the gog subprocess by the adapter only; never store in `.env` or Git |
 
-Las credenciales OAuth, contraseñas del almacén, tokens y bases de datos reales deben permanecer **fuera del repositorio**. Ver [seguridad](SECURITY.md) y [límites de las integraciones](docs/integraciones.md).
+Keep OAuth credentials, keyring passwords, tokens and real databases **outside the repository**. See [security](SECURITY.md) and [integration limits](docs/integrations.md).
 
-### 4. Iniciar la demo
+### 4. Run the demo
 
 ```bash
-python3 demo.py
+python3 src/demo.py
 ```
 
-La demo utiliza fixtures y una base temporal; muestra una notificación preparada y contadores de cero lecturas, escrituras y envíos externos. No contacta Gmail ni Telegram.
+The demo uses fixtures and a temporary database. It displays a prepared notification and counters showing zero external reads, writes and sends. It does not contact Gmail or Telegram.
 
-## 🚀 Uso
+## 🚀 Usage
 
-### Ejecutar las pruebas
+### Run checks
 
 ```bash
 bash scripts/check.sh
 ```
 
-El script usa un `HOME` temporal y un entorno reducido, ejecuta las pruebas Python y de ambos plugins, y luego la demo. No requiere una instalación de OpenClaw ni credenciales. No es un sandbox de red o filesystem.
+The script uses a temporary `HOME` and reduced environment, runs Python and plugin tests, then the demo. It requires neither OpenClaw nor credentials. It is not a filesystem or network sandbox.
 
-### Consultar el núcleo local
+### Explore the local CLI
 
 ```bash
-python3 assistant.py --help
-python3 pipeline.py --help
-python3 mail_watch.py --help
+python3 src/assistant.py --help
+python3 src/pipeline.py --help
+python3 src/mail_watch.py --help
 ```
 
-Para operar con datos reales, revisá primero [la guía de integración](docs/integraciones.md). Los ejemplos no inician servicios ni activan temporizadores.
+Read the [integration guide](docs/integrations.md) before using real data. Examples do not start services or enable timers. Existing checkouts should follow the [layout migration guide](docs/migration.md).
 
-### Estado y alcance
+### Status and scope
 
-**Versión experimental 0.1.0.** Se publica el código de la aplicación y sus pruebas, no la configuración ni el historial operativo de una instalación personal.
+**Experimental version 0.1.0.** This repository contains application code and synthetic tests, not a personal installation's configuration or operational history.
 
-Los adaptadores conservan contratos estrictos de modelos, configuración y binarios. **No es una instalación turnkey ni se garantiza compatibilidad con cualquier versión de OpenClaw.** Las pruebas sintéticas no demuestran una conexión real con Gmail, modelos o Telegram. Se excluyeron parches locales y pruebas históricas del loader interno de OpenClaw que no pertenecen a la aplicación.
+Adapters enforce strict model, configuration and binary contracts. **This is not a turnkey installation, and compatibility with every OpenClaw version is not guaranteed.** Synthetic tests do not prove live Gmail, model or Telegram connectivity. Runtime-specific patches and historical internal-loader tests are not included.
 
-## 🤝 Contribución
+Documentation is available in English and Spanish. Existing runtime messages and serialized values may still be Spanish; this documentation update does not change data contracts or translate stored data.
 
-1. Hacé un fork del repositorio.
-2. Creá una rama: `git switch -c feature/nueva-funcionalidad`.
-3. Implementá el cambio con pruebas pertinentes y ejecutá `bash scripts/check.sh`.
-4. Abrí un pull request explicando el problema, la solución y cómo lo verificaste.
+## 🤝 Contributing
 
-No incluyas correos reales, credenciales ni dumps de bases de datos. Consultá [CONTRIBUTING.md](CONTRIBUTING.md). Se agradecen mejoras de portabilidad, instalación, documentación y compatibilidad del runtime.
+1. Fork the repository.
+2. Create a branch: `git switch -c feature/my-change`.
+3. Implement a focused change, add relevant tests and run `bash scripts/check.sh`.
+4. Open a pull request describing the problem, solution and verification.
 
-## 📄 Licencia
+Never include real emails, credentials or database dumps. See [CONTRIBUTING.md](CONTRIBUTING.md). Portability, setup, documentation and runtime compatibility improvements are welcome.
 
-Este proyecto está bajo la [Licencia MIT](LICENSE). Las herramientas y servicios externos mantienen sus propias licencias y condiciones.
+## 📄 License
+
+Released under the [MIT License](LICENSE). External tools and services retain their own licenses and terms.

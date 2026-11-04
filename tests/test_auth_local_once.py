@@ -61,7 +61,7 @@ class LocalAuthTests(unittest.TestCase):
         self.assertFalse(self.calls)
 
     def test_failure_is_classified_private_and_consumed(self):
-        fixture = json.loads(Path('fixtures/gog-auth-list-v0.46.0.json').read_text())
+        fixture = json.loads(Path('tests/fixtures/gog-auth-list-v0.46.0.json').read_text())
         self.auth = fixture['unreadable_token']
         with self.assertRaises(ConsentError): self.execute()
         self.assertEqual(len(self.calls), 1)

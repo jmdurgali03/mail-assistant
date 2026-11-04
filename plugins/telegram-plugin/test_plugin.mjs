@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import plugin, {createHandler} from './index.mjs';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../../src/', import.meta.url));
 const config = {account: 'synthetic@example.com', incoming_notifications: 'individual_all',
   initial_sync_mode: 'baseline', telegram_account_id: 'bichi', telegram_user_id: '123',
   telegram_chat_id: '123', correction_bridge_enabled: true};
@@ -80,7 +80,7 @@ from test_assistant import NOW, snapshot, message
 app=Assistant(sys.argv[2],json.load(open(sys.argv[1])))
 app.ingest(snapshot([message('ab1')]),NOW)
 app.close()
-`, cfg, db], {cwd: root});
+`, cfg, db], {cwd: root, env: {...process.env, PYTHONPATH: fileURLToPath(new URL('../../tests/', import.meta.url))}});
     function register() {
       let handler;
       plugin.register({pluginConfig: {...options, assistantConfig: cfg, database: db},

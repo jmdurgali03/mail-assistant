@@ -189,7 +189,7 @@ class BridgeTests(unittest.TestCase):
                   Object.keys(p.args).sort().join(',') !== 'questions,state') throw Error('bad boundary');
               return {ok:true,output:{details:''' + json.dumps(value) + '}}; }')
             def call():
-                return subprocess.run(['node', str(Path(__file__).with_name('jev_gateway.mjs'))],
+                return subprocess.run(['node', str(Path(__file__).resolve().parents[1] / 'src/jev_gateway.mjs')],
                                       input=json.dumps(batch_for(PREPARED)), text=True,
                                       capture_output=True, timeout=8, env={**os.environ, 'HOME': folder})
             config_path.write_text(json.dumps(config))

@@ -1,22 +1,36 @@
-# Contribuir a Mail Assistant
+# Contributing to Mail Assistant
 
-Usá issues para errores o propuestas y pull requests para cambios de código.
+Use issues for bugs and proposals, and pull requests for code changes.
 
-1. Hacé un fork y trabajá en una rama propia.
-2. Mantené el cambio acotado y explicá el comportamiento esperado.
-3. Agregá pruebas cuando cambien contratos, permisos, estado o deduplicación.
-4. Ejecutá `bash scripts/check.sh` desde la raíz.
-5. Documentá requisitos y límites nuevos en el README.
+1. Fork the repository and work on your own branch.
+2. Keep changes focused and describe the expected behavior.
+3. Add tests for changes to contracts, permissions, state or deduplication.
+4. Run `bash scripts/check.sh` from the repository root.
+5. Document new requirements and limitations in the README.
 
-## Contratos que deben preservarse
+## Code layout
 
-- Configuración explícita y validación de cuenta, chat privado y remitente.
-- Fallar de forma cerrada ante resultados ambiguos o telemetría insuficiente.
-- No repetir automáticamente una entrega incierta.
-- No otorgar herramientas al modelo analizador ni ejecutar instrucciones del correo.
-- No confundir acciones propuestas con operaciones ejecutadas.
-- Ninguna prueba debe requerir credenciales o mensajes reales.
+- `src/`: Python modules and the JavaScript Jev gateway.
+- `tests/`: Python tests; synthetic fixtures live in `tests/fixtures/`.
+- `plugins/`: independent OpenClaw plugins and their Node.js tests.
+- `examples/`: sanitized configuration templates.
+- `systemd/` and `scripts/`: optional deployment units and development checks.
 
-Incluí en el PR el problema, el cambio, la evidencia de pruebas y las limitaciones.
-Usá siempre datos sintéticos. No publiques capturas de bandeja, IDs personales,
-credenciales ni logs privados. Para vulnerabilidades, leé SECURITY.md.
+For an individual Python test, use:
+
+```bash
+PYTHONPATH=src:tests python3 -m unittest test_assistant -v
+```
+
+## Contracts to preserve
+
+- Explicit configuration and validation of account, private chat and sender.
+- Fail closed on ambiguous results or insufficient telemetry.
+- Never automatically retry uncertain delivery.
+- Do not grant tools to the analysis model or execute email instructions.
+- Keep proposed actions distinct from executed operations.
+- Tests must not require real credentials or messages.
+
+Include the problem, change, test evidence and limitations in your PR. Always use
+synthetic data. Do not publish inbox screenshots, personal IDs, credentials or
+private logs. Read [SECURITY.md](SECURITY.md) for vulnerability reporting.

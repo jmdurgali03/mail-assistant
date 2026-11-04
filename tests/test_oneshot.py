@@ -33,7 +33,7 @@ class OneShotTests(unittest.TestCase):
         self.state_dir = self.root / 'ledger'
         self.state_dir.mkdir(mode=0o700)
         self.config = self.root / 'analysis.json'
-        template = Path('analysis-config.owner.example.json').read_text()
+        template = Path('examples/analysis-config.owner.example.json').read_text()
         self.config.write_text(template.replace('/home/REPLACE_USER', str(Path.home())))
         self.config.chmod(0o600)
         self.plan = {'account': 'synthetic@example.invalid', 'message_id': 'abc1',
@@ -484,7 +484,7 @@ class OneShotTests(unittest.TestCase):
         # Use a temporary project checkout, not the real project's ledger.
         import shutil
         for name in ['oneshot.py', 'gmail_unlock.py', 'gmail_consent.py', 'pipeline.py', 'assistant.py']:
-            shutil.copyfile(name, self.root / name)
+            shutil.copyfile(Path(__file__).resolve().parents[1] / "src" / name, self.root / name)
         self.state_dir.rename(self.root / '.oneshot-state')
         self.state_dir = self.root / '.oneshot-state'
         self.plan['state_dir'] = str(self.state_dir)

@@ -31,7 +31,7 @@ class InboxProofTests(unittest.TestCase):
         self.account.write_text('synthetic@example.invalid')
         self.account.chmod(0o600)
         self.config = self.home / 'analysis.json'
-        self.config.write_text(Path('analysis-config.owner.example.json').read_text().replace(
+        self.config.write_text(Path('examples/analysis-config.owner.example.json').read_text().replace(
             '/home/REPLACE_USER', str(self.home)))
         self.config.chmod(0o600)
         self.gog = self.home / '.local/bin/gog'
@@ -440,7 +440,7 @@ class InboxProofTests(unittest.TestCase):
         self.assertEqual(self.state.receipt['auth_local_invocations'], 1)
 
     def test_public_cli_local_without_valid_then_checked_true_is_accepted(self):
-        fixture = json.loads(Path('fixtures/gog-auth-list-v0.46.0.json').read_text())
+        fixture = json.loads(Path('tests/fixtures/gog-auth-list-v0.46.0.json').read_text())
         original = self.state.runner
         def runner(args, **kwargs):
             result = original(args, **kwargs)
@@ -457,7 +457,7 @@ class InboxProofTests(unittest.TestCase):
             {'stage': 'refresh', 'outcome': 'accepted', 'returncode': 0, 'stderr_present': False}])
 
     def test_public_cli_rc_zero_unreadable_token_stops_without_password_diagnosis(self):
-        fixture = json.loads(Path('fixtures/gog-auth-list-v0.46.0.json').read_text())
+        fixture = json.loads(Path('tests/fixtures/gog-auth-list-v0.46.0.json').read_text())
         self.auth = fixture['unreadable_token']
         with self.assertRaises(ConsentError): self.execute()
         self.assertEqual(len(self.calls), 1)

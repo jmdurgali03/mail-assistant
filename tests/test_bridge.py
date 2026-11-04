@@ -92,7 +92,7 @@ class BridgeTests(unittest.TestCase):
                 apply(self.config, self.db, envelope(text))
 
     def test_cli_errors_are_generic_and_read_is_bounded(self):
-        command = [sys.executable, str(Path(__file__).with_name("bridge.py")),
+        command = [sys.executable, str(Path(__file__).resolve().parents[1] / "src/bridge.py"),
                    "--config", str(self.config), "--db", str(self.db)]
         for raw in ('SYNTHETIC_PRIVATE_COMMAND', 'x' * 8193):
             result = subprocess.run(command, input=raw, text=True, capture_output=True)

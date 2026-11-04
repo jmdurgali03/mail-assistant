@@ -7,7 +7,7 @@ import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import plugin, {createHandler} from './index.mjs';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../../src/', import.meta.url));
 function fixture(t) {
   const dir = mkdtempSync(join(tmpdir(), 'mail-actions-test-'));
   t.after(() => rmSync(dir, {recursive: true, force: true}));
@@ -88,7 +88,7 @@ class Sender:
 deliver(watch.box,Sender(),NOW)
 print(app.db.execute('select token from notification_tokens').fetchone()[0])
 app.close()
-`, f.options.assistantConfig, f.options.database], {cwd: root, encoding: 'utf8'}).trim();
+`, f.options.assistantConfig, f.options.database], {cwd: root, env: {...process.env, PYTHONPATH: fileURLToPath(new URL('../../tests/', import.meta.url))}, encoding: 'utf8'}).trim();
   f.ctx.callback.data = `bm2:done:${output}`;
   const handler = createHandler(f.options);
   await handler(f.ctx);

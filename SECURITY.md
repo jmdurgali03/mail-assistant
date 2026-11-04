@@ -1,27 +1,26 @@
-# Seguridad
+# Security
 
-Este proyecto es experimental. No se garantiza la ausencia de vulnerabilidades.
+This project is experimental. It is not guaranteed to be free of vulnerabilities.
 
-## Datos privados
+## Private data
 
-Mantené fuera del repositorio las credenciales OAuth, contraseñas de almacenes,
-tokens de Telegram/proveedores, cuentas y rutas personales, bases SQLite,
-configuraciones reales, recibos, sesiones y cuerpos de correo. `.gitignore` es
-una defensa adicional, no un escáner de secretos ni una garantía de seguridad.
+Keep OAuth credentials, keyring passwords, Telegram/provider tokens, personal
+accounts and paths, SQLite databases, live configuration, receipts, sessions and
+email bodies outside this repository. `.gitignore` is an additional defense,
+not a secret scanner or a security guarantee.
 
-El contenido necesario para el análisis de correos ordinarios se transmite a los
-proveedores configurados. Revisá sus políticas y configurá una cuenta de prueba
-antes de usar correo personal. Los filtros de autenticación son conservadores,
-pero no garantizan detectar todos los secretos. El estado local puede contener
-metadatos, extractos y resúmenes de correo; tratá la base de datos como privada.
+Content needed to analyze ordinary email is sent to configured providers. Review
+their policies and use a test account before connecting personal email.
+Authentication-content filters are conservative but cannot detect every secret.
+Local state can contain email metadata, excerpts and summaries; keep it private.
 
-No expongas los portales OAuth directamente a Internet sin revisar origen,
-transporte, acceso y sesión. No actives un segundo consumidor del mismo token
-Telegram. Revisá los ejemplos systemd antes de instalarlos.
+Do not expose OAuth portals directly to the Internet without reviewing origin,
+transport, access and session controls. Do not start a second consumer using the
+same Telegram token. Review systemd examples before installing them.
 
-## Reportar una vulnerabilidad
+## Reporting a vulnerability
 
-Si GitHub ofrece la opción **Report a vulnerability** en la pestaña Security,
-usala para un reporte privado. Si no está disponible, abrí un issue sin detalles
-explotables ni datos privados, solicitando un canal de coordinación. Nunca
-publiques tokens o correos reales como demostración.
+If GitHub offers **Report a vulnerability** in the Security tab, use it for a
+private report. Otherwise open an issue without exploitable details or private
+data, requesting a coordination channel. Never publish real tokens or emails
+as proof.

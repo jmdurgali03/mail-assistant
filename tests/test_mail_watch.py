@@ -543,7 +543,8 @@ sys.argv[0]='mail_watch.py'
 raise SystemExit(mail_watch.main())
 '''
         env = {'HOME': str(folder), 'PATH': str(bin_dir) + ':/usr/bin:/bin',
-               'CREDENTIALS_DIRECTORY': str(folder)}
+               'CREDENTIALS_DIRECTORY': str(folder),
+               'PYTHONPATH': str(Path(__file__).resolve().parents[1] / 'src')}
         def invoke(command, at, expected=0):
             result = subprocess.run([sys.executable,'-c',bootstrap,str(self.f.config),at.isoformat(),
                                      command,'--config',str(config),'--db',str(state/'watch.sqlite3'),
