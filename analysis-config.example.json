@@ -1,0 +1,14 @@
+{
+  "tools": {
+    "deny": [
+      "*"
+    ]
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "openai/gpt-6.1-sol"
+      }
+    }
+  }
+}

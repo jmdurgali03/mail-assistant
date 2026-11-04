@@ -1,0 +1,21 @@
+{
+  "local_valid": {
+    "accounts": [{
+      "email": "synthetic@example.invalid",
+      "client": "default",
+      "services": ["gmail"],
+      "scopes": ["https://www.googleapis.com/auth/gmail.readonly"],
+      "created_at": "2026-01-01T00:00:00Z",
+      "auth": "oauth"
+    }]
+  },
+  "unreadable_token": {
+    "accounts": [{
+      "email": "synthetic@example.invalid",
+      "client": "default",
+      "auth": "oauth",
+      "error": "read token: aes.KeyUnwrap(): integrity check failed",
+      "hint": "synthetic diagnostic; not a real credential"
+    }]
+  }
+}

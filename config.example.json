@@ -1,0 +1,16 @@
+{
+  "account": "replace-me@gmail.com",
+  "telegram_user_id": "REPLACE_ME",
+  "telegram_chat_id": "REPLACE_ME",
+  "live_reads_enabled": false,
+  "incoming_notifications": "individual_all",
+  "initial_sync_mode": "baseline",
+  "telegram_account_id": "REPLACE_WITH_EXISTING_BICHI_ACCOUNT",
+  "analysis_enabled": false,
+  "analysis_model": "openai/gpt-6.1-sol",
+  "analysis_config": "/private/state/bichi-mail/analysis.json",
+  "delivery_enabled": false,
+  "correction_bridge_enabled": false,
+  "job_enabled": false,
+  "analysis_batch_limit": 3
+}

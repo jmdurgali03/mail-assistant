@@ -1,0 +1,20 @@
+{
+  "tools": {"deny": ["*"]},
+  "agents": {
+    "ownership": "explicit",
+    "defaults": {
+      "systemAgent": {"agentId": "bichi-mail-analyzer"},
+      "model": {"primary": "openai/gpt-6.1-sol"},
+      "skipBootstrap": true,
+      "models": {"openai/gpt-6.1-sol": {"agentRuntime": {"id": "openclaw"}}}
+    },
+    "entries": {"bichi-mail-analyzer": {
+      "workspace": "/home/REPLACE_USER/.openclaw-bichi-mail-analysis/workspace"
+    }}
+  },
+  "auth": {
+    "profiles": {"openai:bichi-mail-analyzer": {"provider": "openai", "mode": "oauth"}},
+    "order": {"openai": ["openai:bichi-mail-analyzer"]}
+  },
+  "plugins": {"entries": {"openai": {"enabled": true}}}
+}

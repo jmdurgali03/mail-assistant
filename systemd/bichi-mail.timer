@@ -1,0 +1,11 @@
+[Unit]
+Description=Bichi Mail new Inbox polling every minute (individual summaries only)
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+Persistent=false
+Unit=bichi-mail.service
+
+[Install]
+WantedBy=timers.target

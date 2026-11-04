@@ -1,0 +1,15 @@
+{
+  "id": "bichi-mail-actions",
+  "name": "Bichi Mail Actions",
+  "description": "Private review and opt-in reminders via existing Telegram ingress.",
+  "activation": {"onStartup": true},
+  "configSchema": {
+    "type": "object", "additionalProperties": false,
+    "required": ["assistantRoot", "assistantConfig", "database"],
+    "properties": {
+      "assistantRoot": {"type": "string"},
+      "assistantConfig": {"type": "string"},
+      "database": {"type": "string"}
+    }
+  }
+}

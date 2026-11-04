@@ -1,0 +1,17 @@
+{
+  "id": "bichi-mail-corrections",
+  "name": "Bichi Mail Corrections",
+  "description": "Explicit private mail corrections through the existing runtime; no Telegram consumer.",
+  "activation": {"onStartup": true},
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": {"type": "boolean", "default": false},
+      "assistantRoot": {"type": "string"},
+      "assistantConfig": {"type": "string"},
+      "database": {"type": "string"},
+      "python": {"type": "string", "default": "/usr/bin/python3"}
+    }
+  }
+}

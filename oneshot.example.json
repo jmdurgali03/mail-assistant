@@ -1,0 +1,16 @@
+{
+  "account": "REPLACE_WITH_CONFIRMED_ACCOUNT",
+  "message_id": null,
+  "telegram_account_id": "REPLACE_WITH_VERIFIED_BICHI_ACCOUNT",
+  "telegram_chat_id": "REPLACE_WITH_CONFIRMED_PRIVATE_CHAT",
+  "telegram_user_id": "REPLACE_WITH_VERIFIED_USER_ID",
+  "analysis_config": "/home/REPLACE_USER/.openclaw-bichi-mail-analysis/openclaw.json",
+  "state_dir": "/home/REPLACE_USER/bichi-workspace/mail-assistant/.oneshot-state",
+  "expires_at": 0,
+  "recipient_confirmation": {
+    "by": "PENDING",
+    "channel": "telegram",
+    "chat_type": "private",
+    "at_unix": 0
+  }
+}

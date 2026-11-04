@@ -1,0 +1,9 @@
+{
+  "tools": {"deny": ["*"]},
+  "agents": {"defaults": {"model": {"primary": "openai/gpt-6.1-sol"}}},
+  "auth": {
+    "profiles": {"openai:REPLACE_WITH_EXISTING_PROFILE_ID": {"provider": "openai", "mode": "oauth"}},
+    "order": {"openai": ["openai:REPLACE_WITH_EXISTING_PROFILE_ID"]}
+  },
+  "plugins": {"entries": {"openai": {"enabled": true}, "codex": {"enabled": true}}}
+}
