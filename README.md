@@ -158,3 +158,19 @@ Never include real emails, credentials or database dumps. See [CONTRIBUTING.md](
 ## 📄 License
 
 Released under the [MIT License](LICENSE). External tools and services retain their own licenses and terms.
+
+## Provider quota recovery
+
+The watcher keeps affected messages in a persistent SQLite queue when GPT reports
+a quota/rate limit or the Jev gateway is unavailable. Gmail capture continues
+during the 15-minute analysis cooldown; retries use the existing GPT → Jev → GPT
+pipeline, up to three messages per cycle, without switching models.
+
+After a recovery batch finishes, Telegram receives a durable multipart report
+alongside the usual individual notifications. Existing promotion/social filters
+and authentication-code protection remain in force. Ambiguous deliveries are
+never resent automatically; invalid analysis results and interrupted processing
+claims still require review. Historical review records are not replayed.
+
+Queue capture requires valid Gmail authorization. A chat token limit does not
+necessarily mean the worker's provider quota is exhausted.

@@ -413,6 +413,74 @@ class EndToEndTests(unittest.TestCase):
         self.assertEqual(len(self.items), 1)
         self.assertTrue(self.watch.status()['analysis_resume'])
 
+    def test_quota_queue_capture_restart_and_recovery_report(self):
+        self.f.model_rc, self.f.stderr = 1, 'Rate limit reached (429) PRIVATE_QUOTA_DETAIL'
+        result = self.tick()
+        self.assertEqual(self.watch.status()['events'], {'queued': 1})
+        self.assertEqual(self.sent, [])
+        self.assertTrue(self.watch.status()['recovery_batch_active'])
+        # Gmail capture continues without invoking models while quota is cooling.
+        self.tick('abc2')
+        self.assertEqual(self.watch.status()['events'], {'queued': 2})
+        self.assertEqual(len(self.items), 1)
+        self.watch = Watch(self.app, clock=lambda: self.now)
+        original = self.f.run_fake
+        def multi_message(args, **kw):
+            second = 'get' in args and 'abc2' in args
+            if second:
+                args = ['abc1' if a == 'abc2' else a for a in args]
+            result = original(args, **kw)
+            if second:
+                data = json.loads(result.stdout)
+                data['message']['id'] = 'abc2'
+                result.stdout = json.dumps(data)
+            return result
+        self.f.run_fake = multi_message
+        self.f.model_rc, self.f.stderr = 0, ''
+        self.now += timedelta(minutes=16)
+        result = self.tick('abc2')
+        self.assertEqual(self.watch.status()['events'], {'analyzed': 2})
+        reports = [r for r in self.sent if r['kind'] == 'recovery']
+        self.assertEqual(len(reports), 1)
+        self.assertIn('2 correos pendientes', reports[0]['payload'])
+        self.assertIn('Solicita revisar el proyecto', reports[0]['payload'])
+        self.assertFalse(self.watch.status()['recovery_batch_active'])
+        self.tick('abc2')
+        self.assertEqual(len([r for r in self.sent if r['kind'] == 'recovery']), 1)
+        self.assertNotIn(b'PRIVATE_QUOTA_DETAIL', (self.f.home / 'watch.sqlite3').read_bytes())
+
+    def test_jev_transport_failure_queued_but_invalid_result_not_retried(self):
+        self.harness.decider.error = 'gateway_unavailable'
+        self.harness.decider.metadata['reason'] = 'gateway_unavailable'
+        self.tick()
+        self.assertEqual(self.watch.status()['events'], {'queued': 1})
+        self.assertEqual(self.sent, [])
+
+    def test_model_final_cannot_trigger_quota_retry(self):
+        self.f.model_rc, self.f.stderr = 0, ''
+        self.f.envelope['final'] = 'quota 429 usage limit'
+        self.tick()
+        self.assertEqual(self.watch.status()['events'], {'needs_review': 1})
+        self.assertFalse(self.watch.status()['recovery_batch_active'])
+
+    def test_recovery_report_unknown_is_not_resent(self):
+        self.f.model_rc, self.f.stderr = 1, 'usage limit'
+        self.tick()
+        self.f.model_rc, self.f.stderr = 0, ''
+        self.now += timedelta(minutes=16)
+        outer = self
+        class Sender:
+            def send(self, row):
+                if row['kind'] == 'recovery':
+                    raise subprocess.TimeoutExpired('synthetic', 1)
+                outer.sent.append(row)
+                return '42'
+        self.tick(sender=Sender())
+        self.assertEqual(self.app.db.execute("SELECT state FROM outbox WHERE kind='recovery'").fetchone()[0],
+                         'unknown')
+        self.tick()
+        self.assertFalse(any(r['kind'] == 'recovery' for r in self.sent))
+
     def test_delivery_timeout_unknown_no_automatic_resend(self):
         class Timeout:
             def send(self, row): raise subprocess.TimeoutExpired('synthetic', 1)

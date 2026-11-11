@@ -147,3 +147,20 @@ No incluyas correos reales, credenciales ni dumps de bases de datos. Consultá [
 ## 📄 Licencia
 
 Este proyecto está bajo la [Licencia MIT](LICENSE). Las herramientas y servicios externos mantienen sus propias licencias y condiciones.
+
+## Recuperación ante límites del proveedor
+
+El watcher conserva los correos afectados en una cola SQLite persistente cuando
+GPT informa un límite de cuota o el gateway Jev no está disponible. La captura
+Gmail continúa durante la pausa de análisis de 15 minutos. Los reintentos usan
+el pipeline GPT → Jev → GPT existente, hasta tres correos por ciclo, sin cambiar
+de modelo.
+
+Al completarse el lote, Telegram recibe un reporte durable dividido en partes,
+además de los avisos individuales habituales. Se mantienen los filtros de
+Promociones/Sociales y la protección de códigos de acceso. Las entregas ambiguas
+no se reenvían automáticamente; los resultados inválidos y los análisis
+interrumpidos requieren revisión. No se reprocesan revisiones históricas.
+
+La captura requiere una autorización Gmail vigente. El límite de tokens del
+chat no implica necesariamente que el worker haya agotado su cuota.

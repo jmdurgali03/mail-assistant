@@ -17,6 +17,7 @@ import stat
 import sqlite3
 import subprocess
 import sys
+import uuid
 
 from assistant import (Assistant, AUTH_SUBJECT, ID, authentication_content, iso, text)
 from gmail_unlock import Verification
@@ -235,6 +236,29 @@ def normalize(row):
 class ContinuousItem(InboxItemSession):
     concise_notifications = True
 
+    def _model_run(self, args, **kwargs):
+        # Inspect only transport diagnostics/error fields, never model final/mail text.
+        runner = self.runner
+        def observed(*a, **kw):
+            result = runner(*a, **kw)
+            diagnostic = result.stderr if result.returncode else ''
+            try:
+                envelope = json.loads(result.stdout)
+                if isinstance(envelope, dict) and envelope.get('error'):
+                    diagnostic += json.dumps(envelope['error'])
+            except (ValueError, TypeError):
+                pass
+            if re.search(r'usage.limit|rate.limit|quota|too many requests|cooldown|'
+                         r'capacity|\b429\b|token.limit', diagnostic, re.I):
+                self.receipt['retryable_provider_failure'] = True
+                self._persist_receipt()
+            return result
+        self.runner = observed
+        try:
+            return super()._model_run(args, **kwargs)
+        finally:
+            self.runner = runner
+
     def _gog(self, *args, **kwargs):
         result = super()._gog(*args, **kwargs)
         message = result.get('message', {}) if isinstance(result, dict) else {}
@@ -290,6 +314,8 @@ class Watch:
                 message_id TEXT PRIMARY KEY, state TEXT NOT NULL,
                 category TEXT, receipt TEXT);
         ''')
+        self.db.execute('CREATE TABLE IF NOT EXISTS watch_recovery_members '
+                        '(batch TEXT, message_id TEXT, PRIMARY KEY(batch,message_id))')
         self.iol = IolSummaries(app, self.box)
 
     def arm(self, now):
@@ -380,13 +406,53 @@ class Watch:
                                 'WHERE message_id=?', (row[0],))
                 self._notice(row[0], REVIEW_SUMMARY)
 
+    def track_recovery(self):
+        batch = self.app.meta('watch_recovery_batch')
+        if batch:
+            self.db.execute("INSERT OR IGNORE INTO watch_recovery_members "
+                            "SELECT ?,message_id FROM watch_events WHERE state='queued'", (batch,))
+
+    def prepare_recovery_report(self):
+        batch = self.app.meta('watch_recovery_batch')
+        if not batch:
+            return
+        rows = self.db.execute("SELECT e.message_id,e.state,o.payload FROM watch_recovery_members m "
+                               "JOIN watch_events e ON e.message_id=m.message_id "
+                               "LEFT JOIN outbox o ON o.key='incoming:'||e.message_id "
+                               "WHERE m.batch=? ORDER BY e.rowid", (batch,)).fetchall()
+        if not rows or any(r['state'] in ('queued', 'processing') for r in rows):
+            return
+        analyzed = sum(r['state'] == 'analyzed' for r in rows)
+        review = sum(r['state'] == 'needs_review' for r in rows)
+        lines = [f'📬 Reporte de recuperación: {len(rows)} correos pendientes. '
+                 f'{analyzed} analizados/protegidos, {review} para revisión. '
+                 'Los grupos financieros y exclusiones conservan su tratamiento habitual.']
+        for row in rows:
+            if row['payload']:
+                from notifications import decode
+                notice = decode(row['payload'])
+                if notice:
+                    lines.append(notice['text'])
+        chunks, current = [], ''
+        for line in lines:
+            if len(current) + len(line) + 2 > 3000:
+                chunks.append(current)
+                current = ''
+            current += ('\n\n' if current else '') + line
+        if current:
+            chunks.append(current)
+        with self.db:
+            for index, chunk in enumerate(chunks):
+                self.box._put(f'recovery:{batch}:{index:06d}', 'recovery', chunk, self.box.route())
+            self.app.set_meta('watch_recovery_batch', None)
+
     def process(self, factory):
         self.recover()
-        count, failures = 0, 0
+        count, failures, reviews = 0, 0, 0
         for event in self.db.execute("SELECT message_id FROM watch_events WHERE state='queued' "
                                      'ORDER BY rowid LIMIT 3').fetchall():
             mid = event[0]
-            # Durable claim BEFORE body/model invocation. One attempt per event.
+            # Durable claim before invocation; only explicit provider failures retry.
             with self.db:
                 self.db.execute("UPDATE watch_events SET state='processing' WHERE message_id=?", (mid,))
             item = factory(lambda receipt: self.save_receipt(mid, receipt))
@@ -406,6 +472,11 @@ class Watch:
                 summary, state = REVIEW_SUMMARY, 'needs_review'
                 category = item.failure or 'message_unavailable_or_invalid'
                 failures += 1
+                decision = item.receipt.get('decision', {})
+                if (item.receipt.get('retryable_provider_failure')
+                        or (category == 'decision_needs_review'
+                            and decision.get('reason') in ('timeout', 'gateway_unavailable'))):
+                    state, category = 'queued', 'provider_unavailable'
             finally:
                 # Persist only fixed descriptions and safe identity, never raw secrets.
                 if item.receipt.get('authentication_protected'):
@@ -420,14 +491,20 @@ class Watch:
             with self.db:
                 self.db.execute('UPDATE watch_events SET state=?,category=? WHERE message_id=?',
                                 (state, category, mid))
-                self._notice(mid, summary, result, getattr(item, 'rfc_message_id', None))
+                if state == 'queued':
+                    if not self.app.meta('watch_recovery_batch'):
+                        self.app.set_meta('watch_recovery_batch', uuid.uuid4().hex)
+                    self.track_recovery()
+                else:
+                    self._notice(mid, summary, result, getattr(item, 'rfc_message_id', None))
             count += 1
+            reviews += state == 'needs_review'
             if failures:
-                # Circuit-breaker for quota/provider failures, no fallback/replay.
+                # Circuit-breaker; quota queue retries after cooldown, never delivery replay.
                 with self.db:
                     self.app.set_meta('watch_analysis_resume', (self.clock() + timedelta(minutes=15)).isoformat())
                 break
-        return {'processed': count, 'needs_review': failures}
+        return {'processed': count, 'needs_review': reviews}
 
     def tick(self, reader, factory, sender, now):
         self._bound()
@@ -452,6 +529,8 @@ class Watch:
                 else:
                     self.app.set_meta('watch_read_resume', (now + timedelta(minutes=15)).isoformat())
             raise WatchError(category) from None
+        with self.db:
+            self.track_recovery()
         resume = self.app.meta('watch_analysis_resume')
         # Deterministic financial counts remain available during model cooldown.
         self.iol.collect(now)
@@ -468,6 +547,7 @@ class Watch:
             result = self.process(factory)
         self.exclude_categories()  # Also protects ready outbox during analysis cooldown.
         self.iol.prepare(now)
+        self.prepare_recovery_report()
         delivery = deliver(self.box, sender, self.clock(), clock=self.clock)
         delivery['sent'] += reminders['sent']
         if reminders.get('blocked'):
@@ -482,6 +562,7 @@ class Watch:
                 'last_read_failure': self.app.meta('watch_last_read_failure'),
                 'read_resume': self.app.meta('watch_read_resume'),
                 'analysis_resume': self.app.meta('watch_analysis_resume'),
+                'recovery_batch_active': bool(self.app.meta('watch_recovery_batch')),
                 'events': dict(self.db.execute('SELECT state,count(*) FROM watch_events GROUP BY state')),
                 'outbox': dict(self.db.execute('SELECT state,count(*) FROM outbox GROUP BY state'))}
 
